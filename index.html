@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharma Sweets Shop - Professional POS & Billing Software</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Html5-qrcode for Phone Camera Scanning -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Html2Canvas for Bill Image Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased" x-data="posApp()" x-init="init()">
+
+    <!-- TOP HEADER -->
+    <header class="bg-amber-950 text-white h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-4">
+            <span class="bg-amber-600 text-white font-bold px-3 py-2 rounded-xl text-sm flex items-center gap-2 shadow-inner">
+                <i data-lucide="store" class="w-5 h-5"></i> SHARMA SWEETS SHOP
+            </span>
+            <div class="hidden sm:block text-xs text-amber-200 border-l border-amber-800 pl-4">
+                <p class="font-semibold">📍 Sol Badhu</p>
+                <p class="text-[10px] text-amber-300">Helpline / WhatsApp: 8219286186</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs px-3 py-1.5 rounded-full font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> System Active
+            </span>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col justify-between shadow-sm hidden md:flex">
+            <nav class="p-4 space-y-1.5 overflow-y-auto">
+                <p class="text-[11px] font-bold text-slate-400 uppercase px-3 pb-2">Main Menu</p>
+                <template x-for="item in menuItems">
+                    <button @click="currentTab = item.id"
+                        :class="currentTab === item.id ? 'bg-amber-50 text-amber-800 font-bold border-l-4 border-amber-600 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition font-medium">
+                        <i :data-lucide="item.icon" class="w-5 h-5"></i>
+                        <span x-text="item.label"></span>
+                    </button>
+                </template>
+            </nav>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 text-xs text-slate-500">
+                <p class="font-bold text-slate-700">Sharma Sweets POS v2.5</p>
+                <p class="text-[10px] mt-0.5">Professional Billing & Inventory</p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col overflow-y-auto relative p-4 sm:p-8">
+
+            <!-- ================= TAB 1: DASHBOARD ================= -->
+            <div x-show="currentTab === 'dashboard'" x-cloak class="space-y-6 max-w-6xl mx-auto w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Welcome Back, Sharma Ji! 👋</h1>
+                        <p class="text-xs text-slate-500 mt-1">Sol Badhu Store Management Dashboard</p>
+                    </div>
+                    <button @click="currentTab = 'bill'" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md flex items-center gap-2 transition">
+                        <i data-lucide="receipt" class="w-4 h-4"></i> Open POS Billing Counter
+                    </button>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase">Today's Sales</p>
+                            <h3 class="text-2xl font-extrabold text-slate-900 mt-1">₹<span x-text="metrics.todaysSales"></span></h3>
+                        </div>
+                        <div class="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase">Total Bills</p>
+                            <h3 class="text-2xl font-extrabold text-slate-900 mt-1" x-text="metrics.todaysBills"></h3>
+                        </div>
+                        <div class="p-3.5 bg-amber-50 text-amber-700 rounded-2xl"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase">Pending Dues</p>
+                            <h3 class="text-2xl font-extrabold text-rose-600 mt-1">₹<span x-text="metrics.pendingDues"></span></h3>
+                        </div>
+                        <div class="p-3.5 bg-rose-50 text-rose-600 rounded-2xl"><i data-lucide="alert-circle" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase">Total Inventory</p>
+                            <h3 class="text-2xl font-extrabold text-indigo-600 mt-1" x-text="products.length"></h3>
+                        </div>
+                        <div class="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl"><i data-lucide="package" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                    <button @click="currentTab = 'bill'" class="p-6 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-md flex items-center justify-between transition">
+                        <div class="text-left">
+                            <h3 class="text-lg font-bold">New POS Bill</h3>
+                            <p class="text-xs text-amber-100 mt-1">Fast barcode billing & WhatsApp share.</p>
+                        </div>
+                        <i data-lucide="receipt" class="w-7 h-7"></i>
+                    </button>
+                    <button @click="currentTab = 'add_inventory'" class="p-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-md flex items-center justify-between transition">
+                        <div class="text-left">
+                            <h3 class="text-lg font-bold">Manage Inventory</h3>
+                            <p class="text-xs text-emerald-100 mt-1">Add items or delete vault products.</p>
+                        </div>
+                        <i data-lucide="package-plus" class="w-7 h-7"></i>
+                    </button>
+                    <button @click="currentTab = 'sales'" class="p-6 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl shadow-md flex items-center justify-between transition">
+                        <div class="text-left">
+                            <h3 class="text-lg font-bold">Sales & Dues History</h3>
+                            <p class="text-xs text-slate-300 mt-1">Review past customer bills & payments.</p>
+                        </div>
+                        <i data-lucide="history" class="w-7 h-7"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: BILL (POS SCREEN) ================= -->
+            <div x-show="currentTab === 'bill'" x-cloak class="space-y-4 max-w-5xl mx-auto w-full">
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="receipt" class="text-amber-600 w-5 h-5"></i> POS Billing Counter
+                    </h2>
+                    <button @click="currentTab = 'dashboard'" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 transition">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Dashboard
+                    </button>
+                </div>
+                
+                <!-- Customer Details -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="user" class="w-4 h-4 text-amber-600"></i> Customer Information
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Customer Name</label>
+                            <input type="text" x-model="customer.name" placeholder="Ramesh Kumar" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Address / Location</label>
+                            <input type="text" x-model="customer.address" placeholder="Sol Badhu / Mandi" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Mobile Number (WhatsApp)</label>
+                            <input type="text" x-model="customer.mobile" placeholder="9876543210" maxlength="10" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barcode Scanner & Catalog -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <i data-lucide="scan-barcode" class="w-4 h-4 text-amber-600"></i> Scan or Select Items
+                        </h3>
+                        <button @click="startCameraScanner('bill')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-3 py-2 border border-amber-200 rounded-xl flex items-center gap-1.5 transition">
+                            <i data-lucide="camera" class="w-4 h-4"></i> Start Camera Scan
+                        </button>
+                    </div>
+
+                    <!-- Camera Viewfinder Box -->
+                    <div id="reader" x-show="isCameraActive && scannerContext === 'bill'" class="w-full max-w-md mx-auto overflow-hidden rounded-xl border-2 border-amber-400 bg-black"></div>
+                    <button x-show="isCameraActive && scannerContext === 'bill'" @click="stopCameraScanner()" class="w-full max-w-md mx-auto block bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 rounded-xl mt-2">Stop Camera</button>
+
+                    <div class="relative">
+                        <input type="text" x-model="barcodeInput" @keyup.enter="handleBillScan(barcodeInput)" placeholder="Scan code or type item name..." class="w-full pl-10 pr-24 py-3 bg-amber-50/50 border border-amber-300 rounded-xl text-xs font-semibold text-amber-900 focus:outline-none">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-700">
+                            <i data-lucide="scan" class="w-4 h-4"></i>
+                        </span>
+                        <button @click="handleBillScan(barcodeInput)" class="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow">Add Item</button>
+                    </div>
+
+                    <!-- Quick Catalog Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                        <template x-for="p in products" :key="p.id">
+                            <div @click="addToCart(p)" class="p-3 bg-slate-50 hover:bg-amber-50 border border-slate-200 rounded-xl cursor-pointer flex justify-between items-center transition shadow-sm">
+                                <span class="font-bold text-xs text-slate-800 truncate" x-text="p.name"></span>
+                                <span class="text-xs font-extrabold text-emerald-600">₹<span x-text="p.sellingPrice"></span></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Cart Items Table -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-400">Current Cart Items</h3>
+                    <div class="space-y-2 max-h-56 overflow-y-auto">
+                        <template x-for="(item, index) in cart" :key="item.id">
+                            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
+                                <div class="flex-1 pr-2">
+                                    <h5 class="font-bold text-slate-800" x-text="item.name"></h5>
+                                    <span class="text-[11px] text-slate-500">Price: ₹<span x-text="item.sellingPrice"></span></span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center border rounded-lg bg-white overflow-hidden shadow-sm">
+                                        <button @click="updateQty(index, -1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 font-bold">-</button>
+                                        <span class="px-3 font-bold text-xs" x-text="item.qty"></span>
+                                        <button @click="updateQty(index, 1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 font-bold">+</button>
+                                    </div>
+                                    <span class="font-extrabold w-16 text-right text-slate-900">₹<span x-text="item.sellingPrice * item.qty"></span></span>
+                                    <button @click="removeFromCart(index)" class="text-rose-500 hover:text-rose-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="cart.length === 0" class="text-center py-8 text-slate-400 text-xs">Cart is empty. Scan or select items above.</div>
+                    </div>
+                </div>
+
+                <!-- Checkout Box -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4">
+                    <div class="flex justify-between items-center text-base font-bold text-slate-900 border-b pb-3">
+                        <span>Grand Total:</span>
+                        <span class="text-amber-700 text-xl font-extrabold">₹<span x-text="cartGrandTotal"></span></span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Payment Mode</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="paymentMode = 'Cash'" :class="paymentMode === 'Cash' ? 'bg-amber-600 text-white font-bold' : 'bg-slate-100 text-slate-700'" class="py-2.5 rounded-xl text-xs transition">Cash</button>
+                                <button @click="paymentMode = 'Online'" :class="paymentMode === 'Online' ? 'bg-amber-600 text-white font-bold' : 'bg-slate-100 text-slate-700'" class="py-2.5 rounded-xl text-xs transition">Online (UPI)</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Payment Status</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="paymentStatus = 'Done'" :class="paymentStatus === 'Done' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700'" class="py-2.5 rounded-xl text-xs transition">Paid (Done)</button>
+                                <button @click="paymentStatus = 'Not Done'" :class="paymentStatus === 'Not Done' ? 'bg-rose-600 text-white font-bold' : 'bg-slate-100 text-slate-700'" class="py-2.5 rounded-xl text-xs transition">Pending Due</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="completeBill()" :disabled="cart.length === 0" class="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> COMPLETE SALE & GENERATE INVOICE
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= TAB 3: SWEETS COUNTER ================= -->
+            <div x-show="currentTab === 'sweets'" x-cloak class="space-y-4 max-w-5xl mx-auto w-full">
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <h1 class="text-lg font-bold text-amber-900">Sharma Sweets Counter Catalog</h1>
+                    <button @click="currentTab = 'dashboard'" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 transition">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Dashboard
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <template x-for="p in products" :key="p.id">
+                        <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold" x-text="p.category"></span>
+                                <h3 class="font-bold text-base text-slate-800 mt-2" x-text="p.name"></h3>
+                                <p class="text-emerald-600 font-extrabold text-lg mt-1">₹<span x-text="p.sellingPrice"></span> <span class="text-xs font-normal text-slate-500">per <span x-text="p.unit"></span></span></p>
+                            </div>
+                            <button @click="currentTab = 'bill'; addToCart(p);" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition">Bill This Item</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- ================= TAB 4: ADD & MANAGE INVENTORY ================= -->
+            <div x-show="currentTab === 'add_inventory'" x-cloak class="space-y-6 max-w-5xl mx-auto w-full">
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <h1 class="text-lg font-bold tracking-tight text-slate-900">Inventory Vault & Product Management</h1>
+                    <div class="flex gap-2">
+                        <button @click="startCameraScanner('inventory')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow transition">
+                            <i data-lucide="camera" class="w-4 h-4"></i> Scan Barcode
+                        </button>
+                        <button @click="currentTab = 'dashboard'" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 transition">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Camera Viewfinder Box for Inventory -->
+                <div id="reader-inventory" x-show="isCameraActive && scannerContext === 'inventory'" class="w-full max-w-md mx-auto overflow-hidden rounded-xl border-2 border-emerald-400 bg-black"></div>
+                <button x-show="isCameraActive && scannerContext === 'inventory'" @click="stopCameraScanner()" class="w-full max-w-md mx-auto block bg-rose-600 text-white text-xs font-bold py-2 rounded-xl mt-2">Stop Camera</button>
+
+                <!-- Add Product Form -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-400">Add New Item to Vault</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Barcode / QR</label>
+                            <input type="text" x-model="inventoryForm.barcode" placeholder="Scan or type barcode" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Item Name</label>
+                            <input type="text" x-model="inventoryForm.name" placeholder="e.g. Rasmalai 500g" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Category</label>
+                            <input type="text" x-model="inventoryForm.category" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Purchase Price (₹)</label>
+                            <input type="number" x-model.number="inventoryForm.purchasePrice" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Selling Price (₹)</label>
+                            <input type="number" x-model.number="inventoryForm.sellingPrice" class="w-full px-3 py-2.5 border rounded-xl text-xs font-medium">
+                        </div>
+                    </div>
+                    <button @click="saveInventoryItem()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs shadow transition">SAVE ITEM TO INVENTORY</button>
+                </div>
+
+                <!-- Existing Products Vault List with Delete Option -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b font-bold text-xs text-slate-700">Existing Inventory Vault (<span x-text="products.length"></span> Items)</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100/70 text-slate-400 border-b">
+                                <tr>
+                                    <th class="p-3">Barcode</th>
+                                    <th class="p-3">Item Name</th>
+                                    <th class="p-3">Category</th>
+                                    <th class="p-3">Purchase</th>
+                                    <th class="p-3">Selling</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="(p, idx) in products" :key="p.id">
+                                    <tr>
+                                        <td class="p-3 font-mono text-slate-500" x-text="p.barcode"></td>
+                                        <td class="p-3 font-bold text-slate-800" x-text="p.name"></td>
+                                        <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold" x-text="p.category"></span></td>
+                                        <td class="p-3 text-slate-600">₹<span x-text="p.purchasePrice"></span></td>
+                                        <td class="p-3 font-bold text-emerald-600">₹<span x-text="p.sellingPrice"></span></td>
+                                        <td class="p-3 text-right">
+                                            <button @click="deleteInventoryItem(idx)" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-3 py-1 rounded-lg border border-rose-200 transition">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 5: SALES & DUES HISTORY ================= -->
+            <div x-show="currentTab === 'sales'" x-cloak class="space-y-4 max-w-5xl mx-auto w-full">
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <button @click="currentTab = 'dashboard'" class="text-xs bg-slate-100 hover:bg-slate-200 p-2.5 rounded-xl font-bold flex items-center transition">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        </button>
+                        <h1 class="text-lg font-bold tracking-tight text-slate-900">Sales & Dues History</h1>
+                    </div>
+                    <button @click="clearHistory()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-2 rounded-xl font-bold transition">Clear All Records</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-xs">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b text-slate-400">
+                            <tr>
+                                <th class="p-3.5">Invoice</th>
+                                <th class="p-3.5">Customer / Location</th>
+                                <th class="p-3.5">Status</th>
+                                <th class="p-3.5">Total Amount</th>
+                                <th class="p-3.5 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="bill in salesHistory">
+                                <tr>
+                                    <td class="p-3.5 font-bold text-slate-700" x-text="bill.invoiceNo"></td>
+                                    <td class="p-3.5">
+                                        <div class="font-bold text-slate-900" x-text="bill.customerName"></div>
+                                        <div class="text-[11px] text-slate-400" x-text="bill.mobile ? 'Mob: ' + bill.mobile : 'No mobile'"></div>
+                                    </td>
+                                    <td class="p-3.5">
+                                        <span class="px-2.5 py-1 rounded-full font-bold" :class="bill.status === 'Done' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'" x-text="bill.status"></span>
+                                    </td>
+                                    <td class="p-3.5 font-extrabold text-amber-700">₹<span x-text="bill.total"></span></td>
+                                    <td class="p-3.5 text-right">
+                                        <button @click="viewBillModal(bill)" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition">View / Print</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <div x-show="salesHistory.length === 0" class="text-center py-12 text-slate-400 text-xs">No sales history found.</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- INVOICE MODAL -->
+    <div x-show="showInvoiceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-amber-950 text-white p-4 flex justify-between items-center text-xs font-bold">
+                <span>Tax Invoice Preview - Sol Badhu</span>
+                <button @click="showInvoiceModal = false" class="text-white hover:text-amber-200 text-lg font-bold">&times;</button>
+            </div>
+            
+            <!-- Printable Receipt Area -->
+            <div id="printable-receipt" class="p-6 bg-white space-y-4 text-xs text-slate-800 overflow-y-auto flex-1">
+                <div class="text-center border-b pb-3 space-y-1">
+                    <h2 class="font-extrabold text-lg text-amber-950">SHARMA SWEETS SHOP</h2>
+                    <p class="text-[11px] text-slate-500">Sol Badhu, Mandi, H.P.</p>
+                    <p class="text-[11px] font-semibold text-slate-700">Helpline / WhatsApp: 8219286186</p>
+                </div>
+                <div class="flex justify-between text-[11px] border-b pb-2">
+                    <div>
+                        <p><strong class="text-slate-500">Invoice:</strong> <span x-text="selectedBill.invoiceNo"></span></p>
+                        <p><strong class="text-slate-500">Date:</strong> <span x-text="selectedBill.date"></span></p>
+                    </div>
+                    <div class="text-right">
+                        <p><strong class="text-slate-500">Customer:</strong> <span x-text="selectedBill.customerName"></span></p>
+                        <p><strong class="text-slate-500">Mobile:</strong> <span x-text="selectedBill.mobile || 'N/A'"></span></p>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b text-[10px] text-slate-400">
+                            <th class="py-1.5">Item</th>
+                            <th class="py-1.5 text-center">Qty</th>
+                            <th class="py-1.5 text-right">Price</th>
+                            <th class="py-1.5 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="item in selectedBill.items">
+                            <tr>
+                                <td class="py-2 font-bold text-slate-800 truncate max-w-[120px]" x-text="item.name"></td>
+                                <td class="py-2 text-center" x-text="item.qty"></td>
+                                <td class="py-2 text-right">₹<span x-text="item.sellingPrice"></span></td>
+                                <td class="py-2 text-right font-extrabold">₹<span x-text="item.sellingPrice * item.qty"></span></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+
+                <div class="border-t pt-3 space-y-1.5 text-xs">
+                    <div class="flex justify-between font-extrabold text-base">
+                        <span>Grand Total:</span>
+                        <span class="text-amber-700">₹<span x-text="selectedBill.total"></span></span>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-500">
+                        <span>Payment Mode: <strong x-text="selectedBill.paymentMode"></strong></span>
+                        <span>Status: <strong :class="selectedBill.status === 'Done' ? 'text-emerald-600' : 'text-rose-600'" x-text="selectedBill.status"></strong></span>
+                    </div>
+                </div>
+                <div class="text-center pt-4 border-t text-[10px] text-slate-400">
+                    Thank you for shopping at Sol Badhu! 🙏<br>Visit Again.
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="p-4 bg-slate-50 border-t flex flex-col gap-2">
+                <button @click="downloadBillImage()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow transition">
+                    <i data-lucide="download" class="w-4 h-4"></i> Download Bill Image (PNG)
+                </button>
+                <button @click="sendWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow transition">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i> Send Bill on WhatsApp (8219286186)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        function posApp() {
+            return {
+                currentTab: 'dashboard',
+                menuItems: [
+                    { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+                    { id: 'bill', label: 'POS Billing', icon: 'receipt' },
+                    { id: 'sweets', label: 'Sweets Counter', icon: 'cake' },
+                    { id: 'add_inventory', label: 'Manage Inventory', icon: 'package-plus' },
+                    { id: 'sales', label: 'Sales & Dues History', icon: 'history' }
+                ],
+                metrics: {
+                    todaysSales: 0,
+                    todaysBills: 0,
+                    pendingDues: 0
+                },
+                customer: { name: '', address: '', mobile: '' },
+                barcodeInput: '',
+                isCameraActive: false,
+                scannerContext: 'bill',
+                html5QrCode: null,
+                
+                products: [
+                    { id: 1, barcode: '8901001', name: 'Kaju Katli 500g', category: 'Sweets', purchasePrice: 380, sellingPrice: 480, unit: 'box' },
+                    { id: 2, barcode: '8901002', name: 'Gulab Jamun 1kg', category: 'Sweets', purchasePrice: 200, sellingPrice: 280, unit: 'box' },
+                    { id: 3, barcode: '8901003', name: 'Rasgulla 1kg', category: 'Sweets', purchasePrice: 190, sellingPrice: 260, unit: 'box' },
+                    { id: 4, barcode: '8901004', name: 'Motichoor Laddu 500g', category: 'Sweets', purchasePrice: 180, sellingPrice: 240, unit: 'box' },
+                    { id: 5, barcode: '8901005', name: 'Desi Ghee Besan Laddu', category: 'Sweets', purchasePrice: 220, sellingPrice: 300, unit: 'box' },
+                    { id: 6, barcode: '8901006', name: 'Special Doda Barfi 500g', category: 'Sweets', purchasePrice: 320, sellingPrice: 420, unit: 'box' },
+                    { id: 7, barcode: '8901007', name: 'Moong Dal Halwa 500g', category: 'Sweets', purchasePrice: 250, sellingPrice: 350, unit: 'box' },
+                    { id: 8, barcode: '8901008', name: 'Crispy Jalebi 250g', category: 'Sweets', purchasePrice: 100, sellingPrice: 150, unit: 'plate' },
+                    { id: 9, barcode: '8901009', name: 'Khoya Burfi 500g', category: 'Sweets', purchasePrice: 280, sellingPrice: 380, unit: 'box' },
+                    { id: 10, barcode: '8901010', name: 'Special Namkeen Bhujia 400g', category: 'Namkeen', purchasePrice: 80, sellingPrice: 120, unit: 'packet' }
+                ],
+                
+                cart: [],
+                paymentMode: 'Cash',
+                paymentStatus: 'Done',
+                salesHistory: [],
+                inventoryForm: { barcode: '', name: '', category: 'Sweets', purchasePrice: 0, sellingPrice: 0, unit: 'box' },
+                
+                showInvoiceModal: false,
+                selectedBill: { invoiceNo: '', date: '', customerName: '', mobile: '', items: [], total: 0, paymentMode: 'Cash', status: 'Done' },
+
+                init() {
+                    if (localStorage.getItem('sharma_sweets_products')) {
+                        this.products = JSON.parse(localStorage.getItem('sharma_sweets_products'));
+                    }
+                    if (localStorage.getItem('sharma_sweets_sales')) {
+                        this.salesHistory = JSON.parse(localStorage.getItem('sharma_sweets_sales'));
+                    }
+                    if (localStorage.getItem('sharma_sweets_metrics')) {
+                        this.metrics = JSON.parse(localStorage.getItem('sharma_sweets_metrics'));
+                    }
+                    setTimeout(() => lucide.createIcons(), 100);
+                },
+
+                saveDataToStorage() {
+                    localStorage.setItem('sharma_sweets_products', JSON.stringify(this.products));
+                    localStorage.setItem('sharma_sweets_sales', JSON.stringify(this.salesHistory));
+                    localStorage.setItem('sharma_sweets_metrics', JSON.stringify(this.metrics));
+                },
+
+                startCameraScanner(context = 'bill') {
+                    this.stopCameraScanner().then(() => {
+                        this.scannerContext = context;
+                        this.isCameraActive = true;
+                        let targetDiv = context === 'inventory' ? 'reader-inventory' : 'reader';
+                        
+                        setTimeout(() => {
+                            try {
+                                this.html5QrCode = new Html5Qrcode(targetDiv);
+                                const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+                                
+                                this.html5QrCode.start(
+                                    { facingMode: "environment" }, 
+                                    config, 
+                                    (decodedText) => { this.onScanSuccess(decodedText); },
+                                    (errorMessage) => {}
+                                ).catch(err => {
+                                    alert("Camera access denied or secure connection required.");
+                                    this.isCameraActive = false;
+                                });
+                            } catch (e) {
+                                this.isCameraActive = false;
+                            }
+                        }, 200);
+                    });
+                },
+
+                onScanSuccess(decodedText) {
+                    this.stopCameraScanner();
+                    if (this.scannerContext === 'inventory') {
+                        this.inventoryForm.barcode = decodedText;
+                        let existing = this.products.find(p => p.barcode === decodedText);
+                        if (existing) {
+                            this.inventoryForm.name = existing.name;
+                            this.inventoryForm.category = existing.category;
+                            this.inventoryForm.purchasePrice = existing.purchasePrice;
+                            this.inventoryForm.sellingPrice = existing.sellingPrice;
+                        }
+                    } else {
+                        this.barcodeInput = decodedText;
+                        this.handleBillScan(decodedText);
+                    }
+                },
+
+                stopCameraScanner() {
+                    if (this.html5QrCode) {
+                        if (this.html5QrCode.isScanning) {
+                            return this.html5QrCode.stop().then(() => {
+                                this.html5QrCode.clear();
+                                this.isCameraActive = false;
+                            }).catch(err => { this.isCameraActive = false; });
+                        } else {
+                            try { this.html5QrCode.clear(); } catch(e) {}
+                            this.isCameraActive = false;
+                            return Promise.resolve();
+                        }
+                    } else {
+                        this.isCameraActive = false;
+                        return Promise.resolve();
+                    }
+                },
+
+                handleBillScan(code) {
+                    if (!code) return;
+                    let found = this.products.find(p => p.barcode === code || p.name.toLowerCase().includes(code.toLowerCase()));
+                    if (found) {
+                        this.addToCart(found);
+                    } else {
+                        alert('Item not found in inventory! Please add it first via Manage Inventory tab.');
+                    }
+                    this.barcodeInput = '';
+                },
+
+                addToCart(product) {
+                    let existing = this.cart.find(item => item.id === product.id);
+                    if (existing) {
+                        existing.qty++;
+                    } else {
+                        this.cart.push({ ...product, qty: 1 });
+                    }
+                },
+
+                updateQty(index, change) {
+                    this.cart[index].qty += change;
+                    if (this.cart[index].qty <= 0) {
+                        this.cart.splice(index, 1);
+                    }
+                },
+
+                removeFromCart(index) {
+                    this.cart.splice(index, 1);
+                },
+
+                get cartGrandTotal() {
+                    return this.cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0);
+                },
+
+                saveInventoryItem() {
+                    if (!this.inventoryForm.name || !this.inventoryForm.sellingPrice) {
+                        alert('Please fill Item Name and Selling Price!');
+                        return;
+                    }
+                    let newProduct = {
+                        id: Date.now(),
+                        barcode: this.inventoryForm.barcode || '890' + Math.floor(1000 + Math.random() * 9000),
+                        name: this.inventoryForm.name,
+                        category: this.inventoryForm.category,
+                        purchasePrice: this.inventoryForm.purchasePrice,
+                        sellingPrice: this.inventoryForm.sellingPrice,
+                        unit: this.inventoryForm.unit
+                    };
+                    this.products.push(newProduct);
+                    this.saveDataToStorage();
+                    alert('Inventory item saved successfully!');
+                    this.inventoryForm = { barcode: '', name: '', category: 'Sweets', purchasePrice: 0, sellingPrice: 0, unit: 'box' };
+                },
+
+                deleteInventoryItem(index) {
+                    if (confirm('Are you sure you want to delete this item from the vault?')) {
+                        this.products.splice(index, 1);
+                        this.saveDataToStorage();
+                    }
+                },
+
+                completeBill() {
+                    if (this.cart.length === 0) return;
+                    let total = this.cartGrandTotal;
+                    this.metrics.todaysSales += total;
+                    this.metrics.todaysBills++;
+                    if (this.paymentStatus === 'Not Done') {
+                        this.metrics.pendingDues += total;
+                    }
+
+                    let newBill = {
+                        invoiceNo: 'INV-' + (100 + this.salesHistory.length + 1),
+                        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        customerName: this.customer.name || 'Walk-in Customer',
+                        mobile: this.customer.mobile || '',
+                        items: [...this.cart],
+                        total: total,
+                        paymentMode: this.paymentMode,
+                        status: this.paymentStatus
+                    };
+
+                    this.salesHistory.unshift(newBill);
+                    this.saveDataToStorage();
+
+                    this.selectedBill = newBill;
+                    this.showInvoiceModal = true;
+
+                    this.cart = [];
+                    this.customer = { name: '', address: '', mobile: '' };
+                    setTimeout(() => lucide.createIcons(), 100);
+                },
+
+                viewBillModal(bill) {
+                    this.selectedBill = bill;
+                    this.showInvoiceModal = true;
+                    setTimeout(() => lucide.createIcons(), 100);
+                },
+
+                downloadBillImage() {
+                    const element = document.getElementById('printable-receipt');
+                    html2canvas(element, { scale: 2 }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = `${this.selectedBill.invoiceNo}_SharmaSweets_SolBadhu.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    });
+                },
+
+                sendWhatsApp() {
+                    let mobileNumber = this.selectedBill.mobile;
+                    if (!mobileNumber || mobileNumber.length < 10) {
+                        let entered = prompt("Please enter customer's 10-digit mobile number for WhatsApp:");
+                        if (!entered) return;
+                        mobileNumber = entered;
+                    }
+                    let text = `*SHARMA SWEETS SHOP* (Sol Badhu)\n📞 Helpline: 8219286186\nInvoice: ${this.selectedBill.invoiceNo}\nDate: ${this.selectedBill.date}\nCustomer: ${this.selectedBill.customerName}\n------------------\n`;
+                    this.selectedBill.items.forEach(i => {
+                        text += `${i.name} x ${i.qty} = ₹${i.sellingPrice * i.qty}\n`;
+                    });
+                    text += `------------------\n*Grand Total: ₹${this.selectedBill.total}*\nPayment: ${this.selectedBill.status} (${this.selectedBill.paymentMode})\n\nThank you for shopping with us! 🙏`;
+                    
+                    let encoded = encodeURIComponent(text);
+                    window.open(`https://wa.me/91${mobileNumber}?text=${encoded}`, '_blank');
+                },
+
+                clearHistory() {
+                    if (confirm('Are you sure you want to clear all sales history records?')) {
+                        this.salesHistory = [];
+                        this.metrics = { todaysSales: 0, todaysBills: 0, pendingDues: 0 };
+                        this.saveDataToStorage();
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
