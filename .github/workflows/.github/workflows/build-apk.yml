@@ -1,0 +1,25 @@
+name: Compile HTML to Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build WebView APK using PWABuilder CLI / WebAPK
+        uses: mobile-dev-inc/action-android-build@v1
+        with:
+          run-step: |
+            echo "Building Sharma Sweets APK..."
+            
